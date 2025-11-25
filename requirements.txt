@@ -1,0 +1,28 @@
+# Core
+aiogram==3.13.1
+aiohttp==3.10.11
+python-dotenv==1.0.1
+pydantic-settings==2.6.1
+
+# Database
+sqlalchemy[asyncio]==2.0.36
+aiosqlite==0.20.0
+asyncpg==0.30.0  # Для PostgreSQL
+
+# Parsing
+playwright==1.49.1
+
+# Utilities
+uvloop==0.21.0  # Опционально, для улучшения производительности
+
+# Logging (опционально)
+structlog==24.4.0
+
+# Development
+pytest==8.3.4
+pytest-asyncio==0.24.0
+black==24.10.0
+ruff==0.7.0
+mypy==1.13.0
+
+
