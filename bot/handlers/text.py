@@ -1,13 +1,12 @@
-from aiogram import Router, Bot
+from aiogram import Router, Bot, F
 from aiogram.types import Message
-from aiogram.filters import Text
 
 from bot.handlers import film, random, help
 
 router = Router()
 
 
-@router.message(Text("🎬 Найти фильм"))
+@router.message(F.text("🎬 Найти фильм"))
 async def find_film_button(message: Message):
     """Обработчик кнопки 'Найти фильм'"""
     await message.answer(
@@ -16,7 +15,7 @@ async def find_film_button(message: Message):
     )
 
 
-@router.message(Text("🎲 Случайный фильм"))
+@router.message(F.text("🎲 Случайный фильм"))
 async def random_film_button(message: Message, bot: Bot):
     """Обработчик кнопки 'Случайный фильм'"""
     # Импортируем обработчик напрямую
@@ -24,7 +23,7 @@ async def random_film_button(message: Message, bot: Bot):
     await random_handler(message, bot)
 
 
-@router.message(Text("📖 Справка"))
+@router.message(F.text("📖 Справка"))
 async def help_button(message: Message):
     """Обработчик кнопки 'Справка'"""
     # Импортируем обработчик напрямую
