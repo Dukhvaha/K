@@ -11,7 +11,7 @@ async def find_film_button(message: Message):
     """Обработчик кнопки 'Найти фильм'"""
     await message.answer(
         "🔍 <b>Введите название фильма:</b>\n\n"
-        "Или используйте команду /film <название>"
+        "Или используйте команду /film название"
     )
 
 
@@ -43,11 +43,14 @@ async def text_handler(message: Message, bot: Bot):
     if text.startswith('/'):
         return
     
+    # Игнорируем тексты кнопок
+    button_texts = ["🎬 Найти фильм", "🎲 Случайный фильм", "📖 Справка"]
+    if text in button_texts:
+        return
+    
     # Если текст похож на запрос фильма (больше 2 символов)
     if len(text) > 2:
-        # Вызываем обработчик напрямую
-        from bot.handlers.film import film_handler
-        # Создаем копию сообщения с командой
-        message.text = f"/film {text}"
-        await film_handler(message, bot)
+        # Вызываем функцию поиска напрямую
+        from bot.handlers.film import search_film
+        await search_film(text, message, bot)
 

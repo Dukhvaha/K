@@ -42,20 +42,14 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-4. Создайте файл `.env` на основе `.env.example`:
-```bash
-cp .env.example .env
-```
-
-5. Заполните `.env` файл:
+4. Создайте файл `.env` в корне проекта и добавьте:
 ```env
 API_TOKEN=your_telegram_bot_token
 CHANNEL_ID=your_channel_id
-KINOPOISK_TOKEN=your_kinopoisk_token
-DATABASE_URL=sqlite+aiosqlite:///./movies.db
+KINOPOISK_TOKEN=your_kinopoisk_token   # optional
 ```
 
-6. Запустите бота:
+5. Запустите бота:
 ```bash
 python -m bot.main
 ```
@@ -113,10 +107,9 @@ K/
 |-----------|----------|-------------|
 | `API_TOKEN` | Telegram Bot Token | Да |
 | `CHANNEL_ID` | ID приватного канала | Да |
-| `KINOPOISK_TOKEN` | Kinopoisk API Token | Нет |
-| `DATABASE_URL` | URL базы данных | Да |
-| `ENV` | Окружение (development/production) | Нет |
-| `LOG_LEVEL` | Уровень логирования | Нет |
+| `KINOPOISK_TOKEN` | Kinopoisk API Token (опционально) | Нет |
+
+Бот автоматически использует локальную базу SQLite (`movies.db`). Никаких дополнительных переменных окружения не требуется.
 
 ## 📝 Разработка
 

@@ -1,9 +1,7 @@
 import logging
-from typing import AsyncGenerator
+from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-
-from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -11,9 +9,10 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 # Движок БД
+DATABASE_URL = "sqlite+aiosqlite:///./movies.db"
 engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.ENV == "development",
+    DATABASE_URL,
+    echo=False,
     future=True
 )
 
@@ -25,17 +24,18 @@ async_session_maker = async_sessionmaker(
 )
 
 
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
-    """Генератор сессий БД"""
-    async with async_session_maker() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+@asynccontextmanager
+async def get_db_session():
+    """Context manager для сессий БД - использовать через async with"""
+    session = async_session_maker()
+    try:
+        yield session
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
+    finally:
+        await session.close()
 
 
 async def init_db():
@@ -46,5 +46,6 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
     
     logger.info("Database tables created")
+
 
 

@@ -1,12 +1,18 @@
 import logging
 from typing import Optional, Dict, Any, List
 import aiohttp
-from config import settings
+import ssl
+from config import KINOPOISK_TOKEN
 
 logger = logging.getLogger(__name__)
 
 # Используем неофициальный API kinopoisk.dev
 KINOPOISK_API_URL = "https://api.kinopoisk.dev/v1.4"
+
+# SSL контекст для обхода проблем с сертификатами
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
 
 
 async def search_movie_kinopoisk(query: str) -> Optional[Dict[str, Any]]:
@@ -19,17 +25,19 @@ async def search_movie_kinopoisk(query: str) -> Optional[Dict[str, Any]]:
     Returns:
         Словарь с данными фильма или None
     """
-    if not settings.KINOPOISK_TOKEN:
+    if not KINOPOISK_TOKEN:
         logger.warning("Kinopoisk token not configured")
         return None
     
     try:
         headers = {
-            "X-API-KEY": settings.KINOPOISK_TOKEN,
+            "X-API-KEY": KINOPOISK_TOKEN,
             "Content-Type": "application/json"
         }
         
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl=ssl_context)
+        ) as session:
             # Поиск фильма
             search_url = f"{KINOPOISK_API_URL}/movie/search"
             params = {
@@ -73,16 +81,18 @@ async def get_random_movie() -> Optional[Dict[str, Any]]:
     Returns:
         Словарь с данными фильма или None
     """
-    if not settings.KINOPOISK_TOKEN:
+    if not KINOPOISK_TOKEN:
         return None
     
     try:
         headers = {
-            "X-API-KEY": settings.KINOPOISK_TOKEN,
+            "X-API-KEY": KINOPOISK_TOKEN,
             "Content-Type": "application/json"
         }
         
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl=ssl_context)
+        ) as session:
             # Получаем топ фильмов
             url = f"{KINOPOISK_API_URL}/movie"
             params = {
@@ -123,5 +133,6 @@ def _format_movie_data(data: Dict[str, Any]) -> Dict[str, Any]:
         "genres": [g.get("name") for g in data.get("genres", [])],
         "countries": [c.get("name") for c in data.get("countries", [])],
     }
+
 
 

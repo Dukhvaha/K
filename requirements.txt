@@ -2,7 +2,6 @@
 aiogram==3.13.1
 aiohttp==3.10.11
 python-dotenv==1.0.1
-pydantic-settings==2.6.1
 
 # Database
 sqlalchemy[asyncio]==2.0.36
@@ -24,5 +23,6 @@ pytest-asyncio==0.24.0
 black==24.10.0
 ruff==0.7.0
 mypy==1.13.0
+
 
 

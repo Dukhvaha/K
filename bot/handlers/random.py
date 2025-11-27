@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from services.kinopoisk_service import get_random_movie
 from services.zona_parser_service import get_video_url
 from bot.file_storage import get_or_upload_video
+from bot.utils import escape_html
 from database.models import VideoCache
 from database.connection import get_db_session
 
@@ -47,20 +48,21 @@ async def random_handler(message: Message, bot: Bot):
             cached = await VideoCache.get_by_title(session, title)
             if cached and cached.file_id:
                 logger.info(f"Found cached video for random: {title}")
+                description = escape_html(cached.description) if cached.description else ""
                 await message.answer_video(
                     video=cached.file_id,
-                    caption=f"🎲 <b>Случайный фильм:</b> {title}\n\n{cached.description or ''}"
+                    caption=f"🎲 <b>Случайный фильм:</b> {escape_html(title)}\n\n{description}"
                 )
                 return
 
         # Ищем видео
-        search_msg = await message.answer(f"🔍 Ищу: <b>{title}</b>...")
+        search_msg = await message.answer(f"🔍 Ищу: <b>{escape_html(title)}</b>...")
         video_url = await get_video_url(title)
 
         if not video_url:
             # Пробуем другой фильм
             title = random.choice([m for m in POPULAR_MOVIES if m != title])
-            await search_msg.edit_text(f"🔍 Ищу: <b>{title}</b>...")
+            await search_msg.edit_text(f"🔍 Ищу: <b>{escape_html(title)}</b>...")
             video_url = await get_video_url(title)
 
         if not video_url:
@@ -71,7 +73,7 @@ async def random_handler(message: Message, bot: Bot):
             return
 
         # Загружаем видео
-        await search_msg.edit_text(f"📤 Загружаю: <b>{title}</b>...")
+        await search_msg.edit_text(f"📤 Загружаю: <b>{escape_html(title)}</b>...")
         file_id = await get_or_upload_video(bot, video_url, title, kinopoisk_data)
 
         if not file_id:
@@ -92,9 +94,11 @@ async def random_handler(message: Message, bot: Bot):
 
         # Отправляем
         await search_msg.delete()
-        caption = f"🎲 <b>Случайный фильм:</b> {kinopoisk_data.get('name', title) if kinopoisk_data else title}"
+        film_name = kinopoisk_data.get('name', title) if kinopoisk_data else title
+        caption = f"🎲 <b>Случайный фильм:</b> {escape_html(film_name)}"
         if kinopoisk_data and kinopoisk_data.get('description'):
-            caption += f"\n\n{kinopoisk_data['description'][:500]}..."
+            description = escape_html(kinopoisk_data['description'][:500])
+            caption += f"\n\n{description}..."
 
         await message.answer_video(
             video=file_id,
@@ -107,5 +111,6 @@ async def random_handler(message: Message, bot: Bot):
             "❌ Произошла ошибка при поиске случайного фильма.\n"
             "Попробуйте использовать /film с конкретным названием."
         )
+
 
 

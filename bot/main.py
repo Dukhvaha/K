@@ -10,7 +10,7 @@ from aiogram.enums import ParseMode
 # Добавляем корневую директорию в путь для импортов
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import settings
+from config import API_TOKEN
 from bot.handlers import start, film, help, random
 from bot.middlewares.database import DatabaseMiddleware
 from database.connection import init_db
@@ -30,7 +30,7 @@ async def main():
 
     # Создание бота и диспетчера
     bot = Bot(
-        token=settings.API_TOKEN,
+        token=API_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
     dp = Dispatcher()
@@ -53,7 +53,4 @@ async def main():
 
 
 if __name__ == '__main__':
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logging.info("Bot stopped")
+    asyncio.run(main())

@@ -1,11 +1,13 @@
 import logging
 from aiogram import Router, Bot
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 
 from services.zona_parser_service import get_video_url
 from services.kinopoisk_service import search_movie_kinopoisk
 from bot.file_storage import get_or_upload_video
+from bot.keyboards import get_film_keyboard
+from bot.utils import escape_html
 from database.models import VideoCache
 from database.connection import get_db_session
 
@@ -13,20 +15,17 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 
-@router.message(Command('film', 'search'))
-async def film_handler(message: Message, bot: Bot):
-    """Обработчик команды /film и /search"""
-    title = message.text.replace("/film", "").replace("/search", "").strip()
-
+async def search_film(title: str, message: Message, bot: Bot):
+    """Вспомогательная функция для поиска фильма по названию"""
     if not title:
         await message.answer(
-            "❌ <b>Использование:</b> /film <название фильма>\n"
+            "❌ <b>Использование:</b> /film название фильма\n"
             "Пример: /film Матрица"
         )
         return
 
     # Показываем, что ищем
-    search_msg = await message.answer(f"🔍 Ищу: <b>{title}</b>...")
+    search_msg = await message.answer(f"🔍 Ищу: <b>{escape_html(title)}</b>...")
 
     try:
         # Проверяем кеш в БД
@@ -35,10 +34,11 @@ async def film_handler(message: Message, bot: Bot):
             if cached and cached.file_id:
                 logger.info(f"Found cached video for: {title}")
                 await search_msg.delete()
+                description = escape_html(cached.description) if cached.description else ""
                 await message.answer_video(
                     video=cached.file_id,
-                    caption=f"🎬 <b>{cached.title}</b>\n\n{cached.description or ''}",
-                    reply_markup=_get_film_keyboard(cached.kinopoisk_id) if cached.kinopoisk_id else None
+                    caption=f"🎬 <b>{escape_html(cached.title)}</b>\n\n{description}",
+                    reply_markup=get_film_keyboard(cached.kinopoisk_id)
                 )
                 return
 
@@ -52,18 +52,18 @@ async def film_handler(message: Message, bot: Bot):
             logger.warning(f"Kinopoisk search failed: {e}")
 
         # Ищем видео через парсер
-        await search_msg.edit_text(f"🔍 Ищу: <b>{title}</b>...\n📥 Ищу видео...")
+        await search_msg.edit_text(f"🔍 Ищу: <b>{escape_html(title)}</b>...\n📥 Ищу видео...")
         video_url = await get_video_url(title)
 
         if not video_url:
             await search_msg.edit_text(
-                f"❌ Фильм <b>{title}</b> не найден.\n"
+                f"❌ Фильм <b>{escape_html(title)}</b> не найден.\n"
                 "Попробуйте другое название или используйте /random"
             )
             return
 
         # Загружаем в канал и получаем file_id
-        await search_msg.edit_text(f"🔍 Ищу: <b>{title}</b>...\n📤 Загружаю в хранилище...")
+        await search_msg.edit_text(f"🔍 Ищу: <b>{escape_html(title)}</b>...\n📤 Загружаю в хранилище...")
         file_id = await get_or_upload_video(bot, video_url, title, kinopoisk_data)
 
         if not file_id:
@@ -84,44 +84,31 @@ async def film_handler(message: Message, bot: Bot):
 
         # Отправляем пользователю
         await search_msg.delete()
-        caption = f"🎬 <b>{kinopoisk_data.get('name', title) if kinopoisk_data else title}</b>"
+        film_name = kinopoisk_data.get('name', title) if kinopoisk_data else title
+        caption = f"🎬 <b>{escape_html(film_name)}</b>"
         if kinopoisk_data and kinopoisk_data.get('description'):
-            caption += f"\n\n{kinopoisk_data['description'][:500]}..."
+            description = escape_html(kinopoisk_data['description'][:500])
+            caption += f"\n\n{description}..."
         
         await message.answer_video(
             video=file_id,
             caption=caption,
-            reply_markup=_get_film_keyboard(kinopoisk_data.get('id')) if kinopoisk_data else None
+            reply_markup=get_film_keyboard(kinopoisk_data.get('id') if kinopoisk_data else None)
         )
 
     except Exception as e:
-        logger.error(f"Error in film_handler: {e}", exc_info=True)
+        logger.error(f"Error in search_film: {e}", exc_info=True)
         await search_msg.edit_text(
             f"❌ Произошла ошибка при поиске фильма.\n"
             f"Попробуйте позже или используйте другое название."
         )
 
 
-def _get_film_keyboard(kinopoisk_id: int | None) -> InlineKeyboardMarkup | None:
-    """Создает inline-клавиатуру для фильма"""
-    if not kinopoisk_id:
-        return None
-    
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="⭐ Добавить в избранное",
-                callback_data=f"favorite_{kinopoisk_id}"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="📊 Открыть на Кинопоиске",
-                url=f"https://www.kinopoisk.ru/film/{kinopoisk_id}/"
-            )
-        ]
-    ])
-    return keyboard
+@router.message(Command('film', 'search'))
+async def film_handler(message: Message, bot: Bot):
+    """Обработчик команды /film и /search"""
+    title = message.text.replace("/film", "").replace("/search", "").strip()
+    await search_film(title, message, bot)
 
 
 @router.callback_query(lambda c: c.data.startswith('favorite_'))
@@ -129,4 +116,3 @@ async def favorite_handler(callback: CallbackQuery):
     """Обработчик добавления в избранное"""
     # TODO: Реализовать добавление в избранное
     await callback.answer("⭐ Добавлено в избранное!", show_alert=False)
-

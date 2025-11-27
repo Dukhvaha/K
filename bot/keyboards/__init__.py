@@ -1,13 +1,7 @@
-from aiogram.utils.keyboard import ReplyKeyboardBuilder
+from bot.keyboards.reply import get_main_keyboard
+from bot.keyboards.inline import get_film_keyboard
 
+__all__ = ['get_main_keyboard', 'get_film_keyboard']
 
-def get_main_keyboard() -> ReplyKeyboardBuilder:
-    """Создает главную reply-клавиатуру"""
-    builder = ReplyKeyboardBuilder()
-    builder.button(text="🎬 Найти фильм")
-    builder.button(text="🎲 Случайный фильм")
-    builder.button(text="📖 Справка")
-    builder.adjust(2, 1)
-    return builder
 
 

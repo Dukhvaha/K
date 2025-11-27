@@ -20,18 +20,24 @@ playwright install chromium
 
 ### 2. Настройка
 
-Создайте файл `.env`
-
-```bash
-cp .env.example .env
-```
-
-Отредактируйте `.env` и укажите:
+Создайте файл `.env` (если ещё не создан) и пропишите:
 - `API_TOKEN` - токен вашего Telegram бота (получить у @BotFather)
 - `CHANNEL_ID` - ID вашего приватного канала (добавьте бота как админа)
-- `KINOPOISK_TOKEN` - опционально, токен Kinopoisk API
+- `KINOPOISK_TOKEN` - (опционально) токен Kinopoisk API
 
 ### 3. Запуск
+
+```bash
+cat <<'EOF' > .env
+API_TOKEN=ваш_бот_токен
+CHANNEL_ID=идентификатор_приватного_канала
+KINOPOISK_TOKEN=токен_кинопоиска
+EOF
+```
+
+> Переменная `KINOPOISK_TOKEN` опциональна. Если нет токена, оставьте строку пустой или удалите её.
+
+Затем запускайте бота:
 
 ```bash
 python -m bot.main

@@ -8,7 +8,7 @@ from aiogram import Bot
 from aiogram.types import FSInputFile
 
 from services.downloader import download_video
-from config import settings
+from config import CHANNEL_ID
 from database.models import VideoCache
 from database.connection import get_db_session
 
@@ -58,7 +58,7 @@ async def get_or_upload_video(
                 caption = f"🎬 {kinopoisk_data['name']}"
             
             message = await bot.send_video(
-                chat_id=settings.CHANNEL_ID,
+                chat_id=CHANNEL_ID,
                 video=FSInputFile(path),
                 caption=caption
             )

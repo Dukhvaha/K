@@ -148,3 +148,4 @@ class UserFavorite(Base):
         return list(result.scalars().all())
 
 
+
